@@ -70,14 +70,14 @@ const FileItem = ({
 interface CampaignData {
     name: string;
     champain_raw_html: string;
-    champain_json: any;
+    champain_json: string;
     cleanup_script: string;
     fetch_script: string;
     email_generation_script: string;
     jobs_cleanup_script: string;
     send_emails_script: string;
     jobs_raw_html: string;
-    jobs_clean_json: any;
+    jobs_clean_json: string;
     status: string;
 }
 
