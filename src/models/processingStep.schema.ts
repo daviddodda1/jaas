@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-interface ProcessingStep {
+export interface ProcessingStep {
   status: "pending" | "in_progress" | "completed" | "failed";
   error: string | null;
   started_at: Date | null;

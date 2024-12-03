@@ -22,8 +22,8 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col max-w-8xl px-6 pt-6 m-auto items-center justify-items-center min-h-screen font-[family-name:var(--font-geist-sans)]">
-      <div className="flex w-full align-middle items-center justify-between">
+    <div className="flex flex-col max-w-screen-2xl px-6 pt-6 m-auto items-center justify-items-center min-h-screen font-[family-name:var(--font-geist-sans)]">
+      <div className="flex w-full align-middle items-center justify-between mb-8">
         <h1 className="text-4xl font-bold text-center text-foreground block">jaas</h1>
         <button
           className="border border-foreground bg-foreground text-background text-md font-semibold rounded-lg px-4 py-2 hover:bg-background hover:text-foreground"

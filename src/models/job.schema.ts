@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import ProcessingStepSchema from "./processingStep.schema";
+import ProcessingStepSchema from "./processingStep.schema.js";
 
 interface Job {
   campaign_id: mongoose.Types.ObjectId;
