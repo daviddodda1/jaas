@@ -1,5 +1,12 @@
 import mongoose from "mongoose";
 
+export interface ScriptLog {
+  timestamp: Date;
+  level: 'info' | 'error' | 'debug';
+  message: string;
+  scriptType?: string;
+}
+
 interface Campaign {
   name: string;
   status:
@@ -20,14 +27,22 @@ interface Campaign {
   };
   metadata: Map<string, any>;
   champain_raw_html: string;
-  champain_json: any;
+  champain_json: string;
   cleanup_script: string;
   fetch_script: string;
-  email_generation_script: string;
-  jobs_cleanup_script: string;
-  send_emails_script: string;
   jobs_raw_html: string;
-  jobs_clean_json: any;
+  jobs_cleanup_script: string;
+  jobs_clean_json: string;
+  email_generation_script: string;
+  generated_emails_json: string;
+  send_emails_script: string;
+  cleanup_script_logs: ScriptLog[];
+  fetch_script_logs: ScriptLog[];
+  email_generation_script_logs: ScriptLog[];
+  jobs_cleanup_script_logs: ScriptLog[];
+  send_emails_script_logs: ScriptLog[];
+  is_script_running: boolean;
+  current_running_script?: string;
 }
 
 const CampaignSchema = new mongoose.Schema<Campaign>(
@@ -67,7 +82,8 @@ const CampaignSchema = new mongoose.Schema<Campaign>(
       type: String,
     },
     champain_json: {
-      type: mongoose.Schema.Types.Mixed,
+      type: String,
+      default: "{}",
     },
     cleanup_script: {
       type: String,
@@ -80,6 +96,10 @@ const CampaignSchema = new mongoose.Schema<Campaign>(
     email_generation_script: {
       type: String,
       default: "// Default email generation script template\n",
+    },
+    generated_emails_json: {
+      type: String,
+      default: "{}",
     },
     jobs_cleanup_script: {
       type: String,
@@ -94,9 +114,68 @@ const CampaignSchema = new mongoose.Schema<Campaign>(
       default: "",
     },
     jobs_clean_json: {
-      type: mongoose.Schema.Types.Mixed,
-      default: null,
+      type: String,
+      default: "{}",
     },
+    cleanup_script_logs: [{
+      timestamp: { type: Date, default: Date.now },
+      level: { 
+        type: String,
+        enum: ['info', 'error', 'debug'],
+        required: true 
+      },
+      message: { type: String, required: true }
+    }],
+    fetch_script_logs: [{
+      timestamp: { type: Date, default: Date.now },
+      level: { 
+        type: String,
+        enum: ['info', 'error', 'debug'],
+        required: true 
+      },
+      message: { type: String, required: true }
+    }],
+    email_generation_script_logs: [{
+      timestamp: { type: Date, default: Date.now },
+      level: { 
+        type: String,
+        enum: ['info', 'error', 'debug'],
+        required: true 
+      },
+      message: { type: String, required: true }
+    }],
+    jobs_cleanup_script_logs: [{
+      timestamp: { type: Date, default: Date.now },
+      level: { 
+        type: String,
+        enum: ['info', 'error', 'debug'],
+        required: true 
+      },
+      message: { type: String, required: true }
+    }],
+    send_emails_script_logs: [{
+      timestamp: { type: Date, default: Date.now },
+      level: { 
+        type: String,
+        enum: ['info', 'error', 'debug'],
+        required: true 
+      },
+      message: { type: String, required: true }
+    }],
+    is_script_running: {
+      type: Boolean,
+      default: false
+    },
+    current_running_script: {
+      type: String,
+      enum: [
+        "cleanup_script",
+        "fetch_script",
+        "email_generation_script",
+        "jobs_cleanup_script",
+        "send_emails_script"
+      ]
+    }
   },
   {
     timestamps: true,
