@@ -4,6 +4,7 @@ import { VM } from "vm2";
 import Campaign from "../models/campaign.schema.js";
 import type { ScriptLog } from "../models/campaign.schema.js";
 import axios from 'axios';
+import nodemailer from 'nodemailer';
 
 // Define available libraries for scripts
 const SCRIPT_LIBRARIES:any = {
@@ -236,6 +237,65 @@ const getScriptFunctions = async (campaignId: string, scriptType: string) => {
               return callOllamaAI(prompt, model);
             default:
               return callOpenAI(prompt);
+          }
+        },
+        sleep: (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+      };
+    case "send_emails_script":
+      // Create reusable transporter
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD // Use App Password, not regular password
+        }
+      });
+
+      return {
+        getGeneratedEmailsJson: () => {
+          try {
+            return JSON.parse(campaign.generated_emails_json);
+          } catch (error) {
+            throw new Error("Failed to parse generated emails JSON");
+          }
+        },
+        addEmailToDraft: async (emailData: {
+          subject: string;
+          to: string;
+          bodyHtml: string;
+          bodyText: string;
+          resumeUrl?: string;
+        }) => {
+          try {
+            // Create email options
+            const mailOptions = {
+              from: process.env.GMAIL_USER,
+              to: emailData.to,
+              subject: emailData.subject,
+              text: emailData.bodyText,
+              html: emailData.bodyHtml,
+              attachments: emailData.resumeUrl ? [
+                {
+                  filename: 'resume.pdf', // or whatever the file extension is
+                  path: emailData.resumeUrl
+                }
+              ] : undefined
+            };
+
+            // Save as draft using Gmail API
+            const result = await transporter.sendMail({
+              ...mailOptions,
+              draft: true
+            });
+
+            return {
+              success: true,
+              messageId: result.messageId,
+              draftId: result.messageId // Gmail-specific draft ID
+            };
+          } catch (error: any) {
+            logger.error('Error creating email draft:', error);
+            throw new Error(`Failed to create email draft: ${error.message}`);
           }
         },
         sleep: (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
