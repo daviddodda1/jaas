@@ -1,0 +1,818 @@
+# ---------------------------------------------------------------------------- #
+#                               example raw html                               #
+# ---------------------------------------------------------------------------- #
+
+<article id="article-42478761" class="action-buttons"><a href="/jobsearch/jobposting/42478761?source=searchresults"
+            id="ajaxupdateform:j_id_31_3_3p:1:j_id_31_3_3r" class="resultJobItem">
+            <h3 class="title">
+                <span class="flag">
+                    <span class="new">
+                        New
+                    </span><span class="telework">On site</span><span class="postedonJB">
+                        Posted on Job Bank
+                        <span class="description"><span class="fa fa-info-circle" aria-hidden="true"></span>This job was
+                            posted directly by the employer on Job Bank.</span>
+                    </span>
+
+                </span>
+                <span class="job-source job-source-icon-16"><span class="wb-inv">Job Bank</span></span>
+                <span class="noctitle"> software developer
+
+                </span>
+            </h3>
+
+            <ul class="list-unstyled">
+                <li class="date">November 08, 2024
+                </li>
+                <li class="business">OMEGA SOFTWARE SERVICES LTD.</li>
+                <li class="location"><span class="fas fa-map-marker-alt" aria-hidden="true"></span> <span
+                        class="wb-inv">Location</span>
+
+                    Scarborough (ON)
+
+                </li>
+                <li class="salary"><span class="fa fa-dollar" aria-hidden="true"></span>
+                    Salary:
+                    $50.00 hourly</li>
+                <li class="source"><span class="job-source job-source-icon-16"><span class="wb-inv">Job
+                            Bank</span></span>
+                    <span class="wb-inv">Job number:</span>
+                    <span class="fa fa-hashtag" aria-hidden="true"></span>
+                    3146897
+                </li>
+            </ul>
+        </a><span id="ajaxupdateform:j_id_31_3_3p:1:favouritegroup" class="float job-action">
+            <a href="/login" data-jobid="42478761" class="favourite saveLoginRedirectURI"
+                onclick="saveLoginRedirectURIListener(this);">
+                <span class="wb-inv">software developer - Save to favourites</span>
+            </a></span>
+    </article>
+
+# ---------------------------------------------------------------------------- #
+#                                Clean up Script                               #
+# ---------------------------------------------------------------------------- #
+
+// Cleanup script to extract job information from articles
+const main = async () => {
+  try {
+    console.log("Starting HTML cleaning process...");
+    
+    // Get the raw HTML content
+    const htmlContent = GetChampainRawHtml();
+    if (!htmlContent) {
+      throw new Error("No HTML content found");
+    }
+
+    // Parse HTML using cheerio
+    const $ = cheerio.load(htmlContent);
+    
+    // Array to store all job data
+    const jobs = [];
+
+    // Process each article
+    $('article').each((_, article) => {
+      const $article = $(article);
+      
+      // Get job ID from article ID
+      const jobId = $article.attr('id')?.replace('article-', '');
+      
+      // Get job link from the first anchor
+      const jobLink = $article.find('a.resultJobItem').attr('href');
+      const fullJobLink = `https://www.jobbank.gc.ca${jobLink}`;
+      
+      // Get job role from noctitle
+      const jobRole = $article.find('.noctitle').text().trim();
+      
+      // Get work arrangement from telework class
+      const workArrangement = $article.find('.telework').text().trim();
+      
+      // Get employer from business class
+      const employer = $article.find('.business').text().trim();
+      
+      // Get location (remove the "Location" text and clean up)
+      const location = $article.find('.location')
+        .clone()    // Clone the element
+        .children() // Select all children
+        .remove()   // Remove all children
+        .end()      // Go back to selected element
+        .text()     // Get the text
+        .trim();
+      
+      // Get salary (remove the "Salary:" text and clean up)
+      const salaryText = $article.find('.salary').text();
+      const salary = salaryText.replace('Salary:', '').trim();
+
+      // Create job object
+      const job = {
+        job_link: fullJobLink,
+        job_id: jobId,
+        job_role: jobRole,
+        employer: employer,
+        location: location,
+        work_arrangement: workArrangement,
+        salary: salary
+      };
+
+      jobs.push(job);
+    });
+
+    console.log(`Processed ${jobs.length} jobs`);
+
+    console.log("Hi Datd");
+
+    // Save the result
+    await SaveChampainJson(JSON.stringify(jobs, null, 2));
+
+    console.log("Job data extraction completed successfully");
+    return jobs;
+
+  } catch (error) {
+    console.error(`Error processing HTML: ${error.message}`);
+    throw error;
+  }
+};
+
+// Execute the main function
+main().catch(error => {
+  console.error("Script failed:", error.message);
+});
+
+
+# ---------------------------------------------------------------------------- #
+#                        clean json (campaign_data.json)                       #
+# ---------------------------------------------------------------------------- #
+
+[
+    {
+    "job_link": "https://www.jobbank.gc.ca/jobsearch/jobposting/42478761?source=searchresults",
+    "job_id": "42478761",
+    "job_role": "software developer",
+    "employer": "OMEGA SOFTWARE SERVICES LTD.",
+    "location": "Scarborough (ON)",
+    "work_arrangement": "On site",
+    "salary": "$50.00 hourly"
+  }
+]
+
+# ---------------------------------------------------------------------------- #
+#                      fetch jobs script (fetch_script.js)                     #
+# ---------------------------------------------------------------------------- #
+
+const cleanHtml = (html) => {
+  try {
+    const $ = cheerio.load(html, { decodeEntities: true });
+    
+    // Remove script tags
+    $('script').remove();
+    
+    // Remove head section
+    $('head').remove();
+    
+    // Remove style tags
+    $('style').remove();
+    
+    // Remove comments
+    $('*').contents().each(function() {
+      if(this.type === 'comment') {
+        $(this).remove();
+      }
+    });
+
+    // Get HTML without pretty printing
+    let minifiedHtml = $.html({ pretty: false });
+    
+    // Thorough minification steps
+    minifiedHtml = minifiedHtml
+      // Remove whitespace between tags
+      .replace(/>\s+</g, '><')
+      // Remove whitespace at the start of lines
+      .replace(/^\s+/gm, '')
+      // Remove whitespace at the end of lines
+      .replace(/\s+$/gm, '')
+      // Remove line breaks
+      .replace(/\n/g, '')
+      // Remove carriage returns
+      .replace(/\r/g, '')
+      // Remove tabs
+      .replace(/\t/g, '')
+      // Replace multiple spaces with single space
+      .replace(/\s{2,}/g, ' ')
+      // Remove spaces between elements and punctuation
+      .replace(/\s+([.,!?:;])/g, '$1')
+      // Trim the final string
+      .trim();
+    
+    return minifiedHtml;
+  } catch (error) {
+    console.error('Error cleaning HTML:', error);
+    return html; // Return original if cleaning fails
+  }
+};
+
+
+const main = async () => {
+  try {
+    console.log("Starting job details fetch process...");
+    
+    // Get the job listings from cleanup script
+    const jobListings = fetchCleanCampaignJson();
+    if (!jobListings || !Array.isArray(jobListings)) {
+      throw new Error("No valid job listings found in campaign JSON");
+    }
+
+    console.log(`Found ${jobListings.length} jobs to process`);
+
+    // Headers for regular GET requests
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    };
+
+    // Headers for POST request
+    const postHeaders = {
+      'Host': 'www.jobbank.gc.ca',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
+      'Accept': '*/*',
+      'Accept-Language': 'en-US,en;q=0.5',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
+      'Faces-Request': 'partial/ajax',
+      'Origin': 'https://www.jobbank.gc.ca',
+      'DNT': '1',
+      'Sec-GPC': '1',
+      'Connection': 'keep-alive',
+      'Sec-Fetch-Dest': 'empty',
+      'Sec-Fetch-Mode': 'cors',
+      'Sec-Fetch-Site': 'same-origin',
+      'Pragma': 'no-cache',
+      'Cache-Control': 'no-cache'
+    };
+
+    // Array to store all job details
+    const jobDetails = [];
+
+    // Process each job
+    // for (let i = 0; i < jobListings.length; i++) {
+    for (let i = 0; i < 5; i++) {
+      const job = jobListings[i];
+      const jobId = job.job_id;
+      const jobUrl = job.job_link;
+
+      console.log(`Processing job ${i + 1}/${jobListings.length}: ${jobId}`);
+
+      try {
+        // Fetch main job posting
+        const mainResponse = await axios.get(jobUrl, { headers });
+        const cleanedMainHtml = cleanHtml(mainResponse.data);
+
+        // Prepare POST request data for "how to apply" section
+        const postData = 
+          'seekeractivity:jobid=' + jobId +
+          '&seekeractivity_SUBMIT=1' +
+          '&jakarta.faces.ViewState=stateless' +
+          '&jakarta.faces.behavior.event=action' +
+          '&action=applynowbutton' +
+          '&jakarta.faces.partial.event=click' +
+          '&jakarta.faces.source=seekeractivity' +
+          '&jakarta.faces.partial.ajax=true' +
+          '&jakarta.faces.partial.execute=jobid' +
+          '&jakarta.faces.partial.render=applynow markappliedgroup' +
+          '&seekeractivity=seekeractivity';
+
+        // Fetch how to apply section
+        const howToResponse = await axios.post(jobUrl, postData, { headers: postHeaders });
+        const cleanedHowToHtml = cleanHtml(howToResponse.data);
+
+        // Store job details
+        jobDetails.push({
+          job_id: jobId,
+          job_url: jobUrl,
+          main_html: cleanedMainHtml,
+          how_to_html: cleanedHowToHtml,
+          fetch_timestamp: new Date().toISOString(),
+          original_size: {
+            main: mainResponse.data.length,
+            how_to: howToResponse.data.length
+          },
+          cleaned_size: {
+            main: cleanedMainHtml.length,
+            how_to: cleanedHowToHtml.length
+          }
+        });
+
+        console.log(`Successfully fetched and cleaned job ${jobId}`);
+        console.log(`Main HTML reduced from ${mainResponse.data.length} to ${cleanedMainHtml.length} bytes`);
+        console.log(`How-to HTML reduced from ${howToResponse.data.length} to ${cleanedHowToHtml.length} bytes`);
+
+        // Add delay between requests
+        if (i < jobListings.length - 1) {
+          await sleep(1000); // 2 second delay
+        }
+
+      } catch (error) {
+        let errorMessage = error.message;
+        
+        // Check for 410 Gone status
+        if (error.response && error.response.status === 410) {
+          errorMessage = "Job posting has expired";
+        }
+        
+        console.error(`Error fetching job ${jobId}: ${errorMessage}`);
+        
+        // Add failed job with error info
+        jobDetails.push({
+          job_id: jobId,
+          job_url: jobUrl,
+          error: errorMessage,
+          fetch_timestamp: new Date().toISOString(),
+          status: error.response ? error.response.status : 'unknown'
+        });
+      }
+    }
+
+    // Save all job details
+    await saveJobsRawHtml(jobDetails);
+    
+    console.log("Job fetching process completed successfully");
+    return { processed: jobDetails.length };
+
+  } catch (error) {
+    console.error(`Error in fetch process: ${error.message}`);
+    throw error;
+  }
+};
+
+// Execute the main function
+main().catch(error => {
+  console.error("Script failed:", error.message);
+});
+
+# ---------------------------------------------------------------------------- #
+#                      jobs raw html (jobs_raw_html.json)                      #
+# ---------------------------------------------------------------------------- #
+[
+ {
+    "job_id": "42478761",
+    "job_url": "https://www.jobbank.gc.ca/jobsearch/jobposting/42478761?source=searchresults",
+    "main_html": "<!DOCTYPE html><html class=\"no-js\" lang=\"en\" dir=\"ltr\"><body vocab=\"https://schema.org/\" typeof=\"WebPage\"><noscript><iframe src=\"https://www.googletagmanager.com/ns.html?id=GTM-W625MMN\" height=\"0\" width=\"0\" style=\"display:none;visibility:hidden\"></iframe></noscript><nav><ul id=\"wb-tphp\"><li class=\"wb-slc hidden-sm hidden-xs\"><a class=\"wb-sl\" href=\"#searchString\">Skip to job search</a></li><li class=\"wb-slc\"><a class=\"wb-sl\" href=\"#wb-cont\">Skip to main content</a></li><li class=\"wb-slc visible-sm visible-md visible-lg\"><a class=\"wb-sl\" href=\"#wb-info\">Skip to \"About this Web application\"</a></li></ul></nav><header><div id=\"wb-bnr\" class=\"container\"><div class=\"row\"><section id=\"wb-lng\" class=\"pull-right text-right\"><h2 class=\"wb-inv\">Language selection</h2><ul class=\"list-inline mrgn-bttm-0\"><li><a href=\"https://www.guichetemplois.gc.ca/rechercheemplois/offredemploi/42478761?source=searchresults\" lang=\"fr\"><span class=\"hidden-xs\">Français</span><abbr title=\"Français\" class=\"visible-xs h3 mrgn-tp-sm mrgn-bttm-0 text-uppercase\">fr</abbr></a></li></ul></section><div class=\"brand col-xs-9 col-sm-5 col-md-4\" property=\"publisher\" typeof=\"GovernmentOrganization\"><img src=\"/themes-sat/assets/sig-blk-en.svg\" alt=\"\" property=\"logo\"><span class=\"wb-inv\" property=\"name\"> Government of Canada / <span lang=\"fr\">Gouvernement du Canada</span></span><meta property=\"areaServed\" typeof=\"Country\" content=\"Canada\"><link property=\"logo\" href=\"/themes-sat/assets/wmms-blk.svg\"></div><section id=\"wb-srch\" class=\"col-lg-offset-4 col-md-offset-4 col-sm-offset-2 col-xs-12 col-sm-5 col-md-4 visible-md visible-lg\"><h2>Search</h2><form action=\"#\" method=\"post\" name=\"cse-search-box\" role=\"search\" class=\"form-inline\"><div class=\"form-group wb-srch-qry\"><label for=\"wb-srch-q\" class=\"wb-inv\">Search website</label><input id=\"wb-srch-q\" class=\"wb-srch-q form-control\" name=\"q\" type=\"search\" value=\"\" size=\"34\" maxlength=\"170\" placeholder=\"Search\"></div><div class=\"form-group submit\"><button type=\"submit\" id=\"wb-srch-sub\" class=\"btn btn-primary btn-small\" name=\"wb-srch-sub\"><span class=\"glyphicon-search glyphicon\"></span><span class=\"wb-inv\">Search</span></button></div></form></section></div></div><div class=\"app-bar\"><div class=\"container\"><div class=\"row\"><section class=\"col-xs-12 col-sm-6\"><h2 class=\"wb-inv\">Job Bank</h2><a class=\"app-name\" href=\"https://www.jobbank.gc.ca/home\">Job Bank</a></section><nav class=\"col-sm-6 hidden-xs hidden-print\"><form id=\"j_id_2h_2\" name=\"j_id_2h_2\" method=\"post\" action=\"/jobsearch/pers/jobposting.xhtml;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74\" class=\"dept-nav\" enctype=\"application/x-www-form-urlencoded\"><h2 class=\"wb-inv\">Account menu</h2><ul class=\"app-list-account list-unstyled\"><li class=\"signon btn-group pull-right \"><button type=\"button\" class=\"btn dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"false\"><span class=\"title\"><span class=\"in-icon fas fa-user-circle fa-lg\" aria-hidden=\"true\"></span><span class=\"fullName\">Sign in</span><span class=\"fa fa-chevron-down\" aria-hidden=\"true\"></span></span></button><ul class=\"dropdown-menu\"><li><a href=\"https://www.jobbank.gc.ca/login\">Job seekers</a></li><li><a href=\"https://employer.jobbank.gc.ca/employer/dashboard\">Employers</a></li></ul></li></ul><input type=\"hidden\" name=\"j_id_2h_2_SUBMIT\" value=\"1\"><input type=\"hidden\" name=\"jakarta.faces.ViewState\" id=\"j_id__v_0:jakarta.faces.ViewState:1\" value=\"stateless\" autocomplete=\"off\"></form></nav></div></div></div><div class=\"app-bar-mb container visible-xs-block hidden-print\"><nav><h2 class=\"wb-inv\">Menu and search</h2><ul class=\"app-list-main list-unstyled\"><li class=\"wb-mb-links\" id=\"wb-glb-mn\"><a href=\"#mb-pnl\" aria-controls=\"mb-pnl\" class=\"btn overlay-lnk\" role=\"button\">Menu</a><h2>Menu</h2></li></ul><div id=\"mb-pnl\"></div></nav><nav><h2 class=\"wb-inv\">Account menu</h2><form id=\"j_id_2l_2\" name=\"j_id_2l_2\" method=\"post\" action=\"/jobsearch/pers/jobposting.xhtml;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74\" class=\"dept-nav\" enctype=\"application/x-www-form-urlencoded\"><ul class=\"app-list-account list-unstyled\"><li class=\"signon btn-group pull-right \"><button type=\"button\" class=\"btn dropdown-toggle\" data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"false\"><span class=\"title\"><span class=\"in-icon fas fa-user-circle fa-lg\" aria-hidden=\"true\"></span><span class=\"fullName\">Sign in</span><span class=\"fa fa-chevron-down\" aria-hidden=\"true\"></span></span></button><ul class=\"dropdown-menu\"><li><a href=\"https://www.jobbank.gc.ca/login\">Job seekers</a></li><li><a href=\"https://employer.jobbank.gc.ca/employer/dashboard\">Employers</a></li></ul></li></ul><input type=\"hidden\" name=\"j_id_2l_2_SUBMIT\" value=\"1\"><input type=\"hidden\" name=\"jakarta.faces.ViewState\" id=\"j_id__v_0:jakarta.faces.ViewState:2\" value=\"stateless\" autocomplete=\"off\"></form></nav></div><nav id=\"wb-sm\" data-ajax-replace=\"/themes-sat/ajax/appmenu.xhtml\" data-trgt=\"mb-pnl\" class=\"wb-menu visible-md visible-lg\" typeof=\"SiteNavigationElement\"><div class=\"pnl-strt container nvbar\"><h2 class=\"wb-inv\">Main navigation menu</h2><div class=\"row\"><ul class=\"list-inline menu\" role=\"menubar\"><li role=\"none\"><a href=\"https://www.jobbank.gc.ca/findajob\" class=\"item\">Job search</a></li><li role=\"none\"><a href=\"https://www.jobbank.gc.ca/career-planning\" class=\"item\">Career planning</a></li><li role=\"none\"><a href=\"https://www.jobbank.gc.ca/trend-analysis\" class=\"item\">Labour market information</a></li><li role=\"none\"><a href=\"https://www.jobbank.gc.ca/employers\" class=\"item\">Hiring</a></li><li role=\"none\"><a href=\"https://www.jobbank.gc.ca/aboutus\" class=\"item\">Help</a></li><li role=\"none\"><a href=\"https://www.jobbank.gc.ca/intro\" class=\"item\">About</a></li></ul></div></div></nav><nav id=\"wb-bc\" property=\"breadcrumb\"><h2>You are here:</h2><div class=\"container\"><ol class=\"breadcrumb\"><li><a href=\"https://www.jobbank.gc.ca/\">Job Bank</a></li><li><a href=\"/jobsearch/jobsearch?\">Search</a></li></ol></div></nav></header><div id=\"header-search\"><section id=\"search-apps-group\"><div class=\"container\"><div class=\"search-tabs col-md-12 row\"><div class=\"dashboard-header-content col-md-12\"><div class=\"featured-group\"><div class=\"brand-wrap\"><span class=\"featured-icon-wrapper\"><span class=\"featured-icon-brand i-search\"></span></span><div class=\"text\"><p class=\"title\">Discover jobs</p><p class=\"task\">Job Search</p></div></div></div><div class=\"clearfix\"></div></div><span class=\"wb-inv\">jobsearch</span><nav id=\"jb-sm\"><ul class=\"search-apps col-md-12\" aria-label=\"Job Bank Job search\"><li class=\"mobile-menu\" role=\"none\"><a href=\"#\" aria-haspopup=\"true\" aria-expanded=\"false\"><span class=\"fas fa-chevron-circle-right\" aria-hidden=\"true\"></span><span class=\"title\">Job search tools</span></a><ul aria-label=\"Job Bank Job search\" role=\"menubar\"><li role=\"none\"><a class=\" btn \" href=\"/dashboard\" role=\"menuitem\"><span class=\"fal fa-desktop dashboard-icon\" aria-hidden=\"true\"></span><span class=\"dashboard-label title dashboard-label\">Dashboard</span></a></li><li role=\"none\"><a class=\"active btn\" href=\"/jobsearch/jobsearch?\" role=\"menuitem\"><span class=\"fas fa-search\" aria-hidden=\"true\"></span><span class=\"title dashboard-label\">Search</span></a></li><li role=\"none\"><a class=\" btn\" href=\"/jobsearch/jobalert\" role=\"menuitem\"><span class=\"fal fa-bell\" aria-hidden=\"true\"></span><span class=\"title dashboard-label\">Alerts</span></a></li><li role=\"none\"><a class=\" btn \" href=\"/match\" role=\"menuitem\"><span class=\"fal fa-briefcase\" aria-hidden=\"true\"></span><span class=\"title dashboard-label\">Match</span></a></li><li role=\"none\"><a class=\" btn\" href=\"/jobsearch/favourites\" role=\"menuitem\"><span class=\"fal fa-heart\" aria-hidden=\"true\"></span><span class=\"title dashboard-label\">My jobs</span></a></li><li role=\"none\"><a class=\" btn\" href=\"/resumebuilder/list\" role=\"menuitem\"><span class=\"fal fa-file-text\" aria-hidden=\"true\"></span><span class=\"title dashboard-label\">My resumes</span></a></li></ul></li></ul></nav></div><div class=\"clearfix\"></div><div id=\"jobSearchBar\" class=\"search-input-content \"><form id=\"jobSearchResultsJobSearchForm\" class=\"search-module\" action=\"/jobsearch/jobsearch\" accept-charset=\"UTF-8\"><h2 class=\"wb-inv\">Job Search</h2><div class=\"input-wrapper\"><div class=\"input-group input-dual\"><div class=\"input-combo col-md-6\"><div class=\"input-field\"><label class=\"input-label\" for=\"searchString\">Keywords:</label><input name=\"searchstring\" id=\"searchString\" type=\"text\" class=\"searchString form-control input-lg\" value=\"\" placeholder=\"Job title, employer\" maxlength=\"1000\"></div></div><div class=\"input-combo col-md-6\"><div class=\"ta-cityprovsuggest input-field\"><label id=\"searchLocationLabel\" class=\"input-label\" for=\"locationstring\">Location:<span id=\"error-loc-input-field\"></span></label><input id=\"locationstring\" name=\"locationstring\" type=\"text\" value=\"\" class=\"locationstring form-control input-lg\" placeholder=\"City, province or territory\"><span id=\"ta-citysuggest-suggestioncount\" data-name=\"suggestioncount\" role=\"status\" aria-live=\"polite\" class=\"form-control typeahead-helper-hidden-accessible\"></span><span role=\"status\" id=\"ta-citysuggest-selected-title\" class=\"form-control ta-jobtitlesuggest-message ta-communitysuggest-selected-title typeahead-helper-hidden-accessible\"></span><input type=\"hidden\" id=\"locationparam\" name=\"locationparam\" value=\"\"><div id=\"cityPostalCodeSpecial\" class=\"tt-menu wb-inv\"><div class=\"tt-dataset tt-dataset-ta-cityprovsuggest\"><ul><li><a href=\"#\" data-input=\"canada\"><span class=\"fab fa-canadian-maple-leaf\" aria-hidden=\"true\"></span> All of Canada</a></li><li><a href=\"#\" data-input=\"local\"><span class=\"far fa-bullseye-pointer\" aria-hidden=\"true\"></span> Current location</a></li></ul></div></div></div></div><div class=\"input-group-btn\"><div id=\"defaultsubmit\" class=\"hidden\"><button id=\"searchButtonDefault\" type=\"submit\">Search</button></div><div class=\"results\"><button id=\"advanced-search-button\" class=\"secondary-functions btn btn-link nowrap\" type=\"submit\" onclick=\"actiontodataurl(this);\" data-url=\"/jobsearch/advancedsearch\">Advanced</button><a class=\"secondary-functions btn btn-link nowrap\" href=\"/browsejobs\">Browse</a></div><button id=\"searchButton\" class=\"btn btn-primary\" type=\"submit\"><span class=\"fa-icon far fa-search\" aria-hidden=\"true\"></span> Search</button></div></div></div><div class=\"clearfix\"></div><div class=\"clearfix\"></div></form></div></div></section></div><main role=\"main\" property=\"mainContentOfPage\" typeof=\"WebPageElement\" class=\"container\"><div id=\"messageblock-content\" tabindex=\"-1\"><div id=\"messageblock\" role=\"alert\" aria-live=\"assertive\"></div></div><span class=\"aa_jobbank_job_datagroup\"><span class=\"aa_jobbank_job_noccode\">21232</span><span class=\"aa_jobbank_job_source_id\">16</span></span><div id=\"loading\" class=\"loading done row\"><div class=\"content-box col-lg-4 col-md-4 col-sm-6 col-xs-10\"><div class=\"sk-wave\"><div class=\"sk-rect sk-rect1\"></div><div class=\"sk-rect sk-rect2\"></div><div class=\"sk-rect sk-rect3\"></div><div class=\"sk-rect sk-rect4\"></div><div class=\"sk-rect sk-rect5\"></div></div><div class=\"clearfix\"></div><span class=\"h3 pulsate\">Loading, please wait...</span><p><button class=\"cancel btn btn-default btn-sm btn-block\">Cancel</button></p></div></div><section class=\"job-posting-content row\"><div class=\"overlay\"></div><div class=\"job-posting-details col-md-12 wb-eqht\"><div class=\"job-posting-details-body col-md-9\"><div vocab=\"http://schema.org/\" typeof=\"JobPosting\"><h1 property=\"name\" id=\"wb-cont\" class=\"title\"><span property=\"title\">software developer</span></h1><p class=\"date-business\"><span property=\"datePosted\" class=\"date\"> Posted onNovember 08, 2024</span><span> by </span><span class=\"business\"><span class=\"wb-inv\">Employer details</span><span property=\"hiringOrganization\" typeof=\"Organization\"><span property=\"name\"><strong>OMEGA SOFTWARE SERVICES LTD.</strong></span></span></span></p><h2 class=\"subtitle\">Job details</h2><span class=\"hidden\" property=\"description\">Education: Bachelor's degree. Tasks: Write, modify, integrate and test software code. Maintain existing computer programs by making modifications as required. Communicate technical problems, processes and solutions. Prepare reports, manuals and other documentation on the status, operation and maintenance of software. Assist in the collection and documentation of user's requirements. Assist in the development of logical and physical specifications. Program special effects software for film and video applications. Write, modify, integrate and test software code for e-commerce and other Internet applications. Manage incidents. JavaScript Object Notation (JSON). Consult with clients after sale to provide ongoing support. Work conditions and physical capabilities: Fast-paced environment. Work under pressure. Tight deadlines. Repetitive tasks. Handling heavy loads. Attention to detail. Sitting. Personal suitability: Accurate. Client focus. Efficient interpersonal skills. Excellent oral communication. Excellent written communication. Initiative. Judgement. Organized. Team player. Experience: 1 year to less than 2 years.</span><ul class=\"job-posting-brief colcount-lg-2 \"><li><span class=\"fas fa-map-marker-alt\" aria-hidden=\"true\"></span><span class=\"wb-inv\">Location</span><span property=\"joblocation\" typeof=\"Place\"><span class=\"city\" property=\"address\" typeof=\"PostalAddress\"><span property=\"addressLocality\">Scarborough</span>, <span property=\"addressRegion\">ON</span></span></span></li><li><span class=\"fa-icon-desc fa-icon fas fa-building\" aria-hidden=\"true\"></span><span class=\"wb-inv\">Workplace information</span><span>On site</span></li><li><span class=\"fa fa-dollar\" aria-hidden=\"true\"></span><span class=\"wb-inv\">Salary</span><span class=\"attribute-value\" property=\"baseSalary\" typeof=\"MonetaryAmount\"><span property=\"value\" typeof=\"QuantitativeValue\"><span property=\"currency\" content=\"CAD\" class=\"hidden\">$</span><span property=\"minValue\" content=\"50.00\">50.00</span><span property=\"unitText\" class=\"hidden\">HOUR</span> hourly</span> / <span property=\"workHours\"> 35 hours per week</span></span><span id=\"tp_guaranteeMinimumWageInd\" class=\"timepickler\"></span><span id=\"tp_salary\" class=\"timepickler\"></span></li><li><span class=\"fa fa-file-text-o\" aria-hidden=\"true\"></span><span class=\"wb-inv\">Terms of employment</span><span property=\"employmentType\" class=\"attribute-value\">Permanent employment<span style=\"display: block;\" class=\"attribute-value\">Full time</span></span></li><li><span class=\"fa fa-calendar\" aria-hidden=\"true\"></span><span>Starts as soon as possible</span><span id=\"tp_startDateId\" class=\"timepickler\"></span><span id=\"tp_startDate\" class=\"timepickler\"></span></li><li><span class=\"fa fa-user\" aria-hidden=\"true\"></span><span class=\"wb-inv\">vacancies</span><span>1 vacancy</span><span id=\"tp_vacancyNumber\" class=\"timepickler\"></span></li><li><span class=\"wb-inv\">Source</span><span class=\"source-image\"><span class=\"job-source job-source-icon-16\" aria-hidden=\"true\"></span></span><span>Job Bank</span><span>#3146897</span></li></ul><section id=\"variouslocation-dialog\" class=\"mfp-hide modal-dialog modal-content overlay-def\"><header class=\"modal-header\"><h2 class=\"modal-title\">Various locations</h2></header><div class=\"modal-body\"><ul class=\"colcount-sm-2\"><li>Scarborough, ON<div class=\"clearfix\"></div></li></ul></div></section><div class=\"main-job-posting-detail job-posting-detail-requirements \"><h3>Overview</h3><div id=\"comparisonchart\" class=\"comparisonchart\"><h4>Languages</h4><p property=\"qualification\">English</p><h4>Education</h4><ul property=\"educationRequirements qualification\" class=\"csvlist \"><li><span>Bachelor's degree</span></li></ul><h4>Experience</h4><p property=\"experienceRequirements qualification\"><span>1 year to less than 2 years</span></p><h4>On site</h4><p><span class=\"description\"><span class=\"fa-icon-desc fa-icon fas fa-building\" aria-hidden=\"true\"></span> Work must be completed at the physical location. There is no option to work remotely.</span></p><div property=\"responsibilities\"><h3>Responsibilities</h3><h4>Tasks</h4><ul class=\"csvlist\"><li><span>Write, modify, integrate and test software code</span></li><li><span>Maintain existing computer programs by making modifications as required</span></li><li><span>Communicate technical problems, processes and solutions</span></li><li><span>Prepare reports, manuals and other documentation on the status, operation and maintenance of software</span></li><li><span>Assist in the collection and documentation of user's requirements</span></li><li><span>Assist in the development of logical and physical specifications</span></li><li><span>Program special effects software for film and video applications</span></li><li><span>Write, modify, integrate and test software code for e-commerce and other Internet applications</span></li><li><span>Manage incidents</span></li><li><span>JavaScript Object Notation (JSON)</span></li><li><span>Consult with clients after sale to provide ongoing support</span></li></ul></div><div property=\"skills\"><h3>Additional information</h3><h4>Work conditions and physical capabilities</h4><ul class=\"csvlist\"><li><span>Fast-paced environment</span></li><li><span>Work under pressure</span></li><li><span>Tight deadlines</span></li><li><span>Repetitive tasks</span></li><li><span>Handling heavy loads</span></li><li><span>Attention to detail</span></li><li><span>Sitting</span></li></ul><h4>Personal suitability</h4><ul class=\"csvlist\"><li><span>Accurate</span></li><li><span>Client focus</span></li><li><span>Efficient interpersonal skills</span></li><li><span>Excellent oral communication</span></li><li><span>Excellent written communication</span></li><li><span>Initiative</span></li><li><span>Judgement</span></li><li><span>Organized</span></li><li><span>Team player</span></li></ul></div></div></div><div class=\"job-posting-detail-apply\"><div class=\"job-audience\"><span class=\"fa-stack fa-2x\" aria-hidden=\"true\"><span class=\"fal fa-circle fa-stack-2x\"></span><span class=\"far fa-globe fa-stack-1x\"></span></span><h2>Who can apply to this job?<span id=\"tp_applicantOnlyCanadaInd\" class=\"timepickler\"></span></h2><p><strong>The employer accepts applications from:</strong></p><ul><li>Canadian citizens and permanent or temporary residents of Canada.</li><li>Other candidates with or without a valid Canadian work permit.</li></ul></div><div class=\"clearfix\"></div></div><div id=\"applynow\" class=\"job-posting-detail-apply\"><section id=\"seekeractions\" class=\"how-to-apply\"><p><button type=\"button\" data-jsjobid=\"42478761\" id=\"applynowbutton\" class=\"btn btn-success\">Show how to apply</button></p><form id=\"seekeractivity\" name=\"seekeractivity\" method=\"post\" action=\"/jobsearch/pers/jobposting.xhtml;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74\" enctype=\"application/x-www-form-urlencoded\"><input type=\"hidden\" id=\"seekeractivity:jobid\" name=\"seekeractivity:jobid\" value=\"42478761\"><input type=\"hidden\" name=\"seekeractivity_SUBMIT\" value=\"1\"><input type=\"hidden\" name=\"jakarta.faces.ViewState\" id=\"j_id__v_0:jakarta.faces.ViewState:3\" value=\"stateless\" autocomplete=\"off\"></form></section><h3>Advertised until</h3><p property=\"validThrough\">2025-01-16<span id=\"tp_expiryDate\" class=\"timepickler\"></span></p></div></div><div class=\"job-posting-detail-common\"><div class=\"col-md-12 row mrgn-bttm-md\"><p class=\"small\"><strong>Important notice:</strong> This job posting was posted directly by the employer on Job Bank. The Government of Canada has taken steps to make sure it is accurate and reliable but cannot guarantee its authenticity.</p></div><div class=\"clear\"></div><div class=\"row\"><div class=\"col-md-8\"><details class=\"brdr-0\"><summary class=\"btn btn-default btn-sm text-center btn-report\">Report a problem with this job posting</summary><div class=\"clearfix\"></div><div class=\"row\"><div class=\"gc-rprt-prblm\"><div class=\"gc-rprt-prblm-frm gc-rprt-prblm-tggl\"><form id=\"reportProblemJobPosting\" name=\"reportProblemJobPosting\" method=\"post\" action=\"/jobsearch/pers/jobposting.xhtml;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74\" class=\"formRequiredAsterisk\" enctype=\"application/x-www-form-urlencoded\"><fieldset><legend class=\"problemCat\"><span class=\"symbol-required\">*</span><span class=\"field-name\">What’s wrong?</span></legend><div class=\"radio\"><input data-msg=\"Error: Choose an option below.\" type=\"radio\" data-reveal=\"#options_20\" name=\"problem\" value=\"20\" id=\"topic_20\" class=\"jpsubtopic reply-radio safe hasOptions\"><label for=\"topic_20\">This job posting contains incorrect information</label><input data-msg=\"Error: Choose an option below.\" id=\"hidden-problem-topic-20\" name=\"reply-id\" class=\"reply-id\" type=\"hidden\" value=\"20\"></div><div class=\"form-group hide options\" id=\"options_20\"><div class=\"checkbox required\"><input data-msg=\"Error: Choose an option below.\" class=\"optionsother noreveal\" type=\"checkbox\" name=\"subproblem\" value=\"278\" id=\"subtopic_278\"><label class=\"required\" for=\"subtopic_278\">Inaccurate salary</label></div><div class=\"checkbox required\"><input data-msg=\"Error: Choose an option below.\" class=\"optionsother noreveal\" type=\"checkbox\" name=\"subproblem\" value=\"276\" id=\"subtopic_276\"><label class=\"required\" for=\"subtopic_276\">Inaccurate job title</label></div><div class=\"checkbox required\"><input data-msg=\"Error: Choose an option below.\" class=\"optionsother noreveal\" type=\"checkbox\" name=\"subproblem\" value=\"5\" id=\"subtopic_5\"><label class=\"required\" for=\"subtopic_5\">Email</label></div><label class=\"required\" for=\"subtopic_other_option_text_incorect_info\">Provide more details:</label><textarea onchange=\"jsf.ajax.request(this,event,{execute:'reportProblemJobPosting:j_id_2y_3_ez:0:j_id_2y_3_f0:0:j_id_2y_3_fp ','jakarta.faces.behavior.event':'change'})\" class=\"form-control full-width othertextbox othertextbox-20\" maxlength=\"4000\" name=\"subtopic_other_option_text_incorect_info\" id=\"subtopic_other_option_text_incorect_info\" data-msg=\"Error: Value required\"></textarea></div><div class=\"radio\"><input data-msg=\"Error: Choose an option below.\" type=\"radio\" name=\"problem\" value=\"24\" id=\"topic_24\" class=\"jpsubtopic reply-radio redirect\"><label for=\"topic_24\">Report potential misuse of Job Bank</label><input data-msg=\"Error: Choose an option below.\" id=\"hidden-problem-topic-24\" name=\"reply-id\" class=\"reply-id\" type=\"hidden\" value=\"24\"></div><div id=\"hidden-holder1\" class=\"hidden-holder1\"><input type=\"hidden\" id=\"reportProblemJobPosting:hidden-problem-topic-id\" name=\"reportProblemJobPosting:hidden-problem-topic-id\" value=\"\"></div><div id=\"hidden-holder2\" class=\"hidden-holder2\"><input type=\"hidden\" id=\"reportProblemJobPosting:hidden-comments\" name=\"reportProblemJobPosting:hidden-comments\" value=\"\"></div><div id=\"hidden-holder4\" class=\"hidden-holder4\"><input type=\"hidden\" id=\"reportProblemJobPosting:hidden-jobprovCd\" name=\"reportProblemJobPosting:hidden-jobprovCd\" value=\"ON\"></div><div id=\"hidden-holder5\" class=\"hidden-holder5\"><input type=\"hidden\" id=\"reportProblemJobPosting:hidden-to-report-problem\" name=\"reportProblemJobPosting:hidden-to-report-problem\" value=\"\"></div><div id=\"hidden-holder6\" class=\"hidden-holder6\"><input type=\"hidden\" id=\"reportProblemJobPosting:hidden-topic-id-child\" name=\"reportProblemJobPosting:hidden-topic-id-child\" value=\"\"></div><div id=\"hidden-holder7\" class=\"hidden-holder7\"><input type=\"hidden\" id=\"reportProblemJobPosting:hidden-job-source-id\" name=\"reportProblemJobPosting:hidden-job-source-id\" value=\"16\"></div></fieldset><input id=\"reportProblemJobPosting:j_id_2y_3_g6\" name=\"reportProblemJobPosting:j_id_2y_3_g6\" type=\"submit\" value=\"Submit\" class=\"btn btn-primary btn-submit redirectbutton\"><input type=\"hidden\" name=\"reportProblemJobPosting_SUBMIT\" value=\"1\"><input type=\"hidden\" name=\"jakarta.faces.ViewState\" id=\"j_id__v_0:jakarta.faces.ViewState:4\" value=\"stateless\" autocomplete=\"off\"></form></div><div class=\"gc-rprt-prblm-thnk gc-rprt-prblm-tggl hide\"><h3>Thank you for your help!</h3><p>You will not receive a reply. For enquiries, please <a href=\"/support/contactform\">contact us</a>.</p></div></div></div></details></div><div class=\"clearfix\"></div></div></div><div class=\"clearfix\"></div></div><div class=\"job-posting-details-menu col-md-3\"><div class=\"row col-md-12 job-posting-details-jmi-wrapper noprint info-wrapper\"><div class=\"job-posting-details-jmi-content\" id=\"jm-content\"><h2>Plus account</h2><p>Sign up for a Plus account to get the most out of your job search and access all the tools available on Job Bank!</p><p><a href=\"https://www.jobbank.gc.ca/reg/instructions\" class=\"btn btn-default btn-sm btn-block\"><span class=\"fa fa-sign-in\" aria-hidden=\"true\"></span> Sign up now!</a></p></div></div><div class=\"clearfix\"></div><div class=\"clearfix\"></div><div class=\"clearfix\"></div><div class=\"job-posting-function-wrapper info-wrapper\"><h2 class=\"wb-inv\">Other job posting options</h2><ul class=\"job-posting-details-nav noprint\"><li><div class=\"job-action\"><a class=\"favourite signInUserAccount\" href=\"#\" onclick=\"setLoginRedirectURI(this); return false;\" data-jobid=\"42478761\">Favourite<span class=\"wb-inv\">Favourites</span></a></div></li><li><a href=\"mailto:?Subject=software%20developer%20%2342478761&amp;Body=%0D%0AJob%20posting%20from%20Job%20Bank.%0D%0A%0D%0Ahttp://www.jobbank.gc.ca/jobsearch/jobposting/42478761\" title=\"Email this job\"><span class=\"fa fa-envelope\" aria-hidden=\"true\"></span>Email</a></li><li><div class=\"wb-share\" data-wb-share=\"{&quot;pnlId&quot;: &quot;pnl1&quot;}\"></div></li></ul></div><div class=\"clearfix\"></div><div class=\"row col-md-12 job-posting-details-jmi-wrapper info-wrapper\"><div class=\"job-posting-details-jmi-content\"><h2 class=\"h5\">Job market information</h2><a href=\"/marketreport/jobs/22548/22437;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74?source=6\" id=\"j_id_2y_3_ja\"><span class=\"noc-title\">software developer</span><span class=\"noc-no\">NOC 21232</span></a><a href=\"/marketreport/jobs/22531/22437;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74?source=6\" id=\"j_id_2y_3_jg\"><span class=\"noc-location\"><span class=\"fa fa-location-arrow\" aria-hidden=\"true\"></span>Toronto Region</span></a><dl><dt><span class=\"mrgn-rght-sm\">Median wage</span><a href=\"#occupation-help-popup\" id=\"occupation-help\" aria-controls=\"occupation-help-popup\" class=\"dialog-help wb-lbx lbx-modal\" role=\"button\"><span class=\"fa fa-question\"></span><span class=\"wb-inv\">Help - </span></a></dt><dd><a href=\"/marketreport/wages-occupation/22531/22437;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74?source=6\" id=\"j_id_2y_3_js\">47.60 $/hour</a></dd></dl><p><a href=\"/marketreport/summary-occupation/22531/22437;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74?source=6\" id=\"j_id_2y_3_k8\"><span class=\"fa fa-search-plus\" aria-hidden=\"true\"></span> Explore this career</a></p><section id=\"occupation-help-popup\" class=\" mfp-hide modal-dialog modal-content overlay-def \"><header class=\"modal-header\"><h2 class=\"modal-title\">Median wage - Help</h2></header><div class=\"modal-body\">The median wage is the salary of a given occupation where half the workers earn more than that amount, and half earn less. This information is presented on job postings to help job seekers determine how the salary compares to the amount earned by other workers working the same job. Job Bank preferred indicating the median wage, which is less affected by extremely high or low wages, rather than the average wage which is calculated by adding up all the salaries of a group of people and then dividing that total by the number of people.</div><div class=\"modal-footer\"><button class=\"btn btn-sm btn-primary popup-modal-dismiss pull-left\" type=\"button\">Close</button></div></section></div></div><div class=\"row col-md-12 job-posting-details-similar-jobs-wrapper info-wrapper\"><div class=\"job-posting-details-similar-jobs-content\"><h2>Similar job postings</h2><span class=\"location btn-block\">...within Toronto (ON)</span><ul><li><a href=\"/jobsearch/jobposting/41960869;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74\" id=\"j_id_2y_3_kl:0:j_id_2y_3_ko\"><span class=\"title\">software developer</span><span class=\"business\">Nimbus Distro</span></a></li><li><a href=\"/jobsearch/jobposting/42876134;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74\" id=\"j_id_2y_3_kl:1:j_id_2y_3_ko\"><span class=\"title\">software developer</span><span class=\"business\">MESONS TECHNOLOGIES INC.</span></a></li><li><a href=\"/jobsearch/jobposting/42826135;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74\" id=\"j_id_2y_3_kl:2:j_id_2y_3_ko\"><span class=\"title\">mobile applications developer</span><span class=\"business\">Enhance Intelligence Inc.</span></a></li><li><a href=\"/jobsearch/jobposting/42131673;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74\" id=\"j_id_2y_3_kl:3:j_id_2y_3_ko\"><span class=\"title\">software developer</span><span class=\"business\">Infonet Technology Inc.</span></a></li></ul><a href=\"/jobsearch/jobsearch;jsessionid=FBCDB872CF2EF15F1E1A7FCC48EE8030.jobsearch74?fn21=21232&amp;mid=22437&amp;sort=P\" class=\"btn btn-default btn-sm btn-block\">Similar job postings</a></div><div class=\"clearfix\"></div></div><div class=\"clearfix\"></div></div></div></section><div class=\"pagedetails\"><div class=\"row\"><div class=\"col-sm-6 col-lg-4 mrgn-tp-sm hidden\"><a href=\"https://www.canada.ca/en/report-problem.html\" class=\"btn btn-default btn-block\">Report a problem or mistake on this page</a></div><div class=\"col-sm-3 mrgn-tp-sm pull-right hidden\"><div class=\"wb-share\" data-wb-share=\"{&quot;lnkClass&quot;: &quot;btn btn-default btn-block&quot;}\"></div></div></div><dl id=\"wb-dtmd\"><dt>Date modified: </dt><dd><time property=\"dateModified\">2024-11-19</time></dd></dl></div></main><aside class=\"prov-prog container\"><div class=\"wb-eqht row\"><section class=\"col-md-6 mrgn-bttm-md\"><a href=\"https://www.gojobs.gov.on.ca/Preview.aspx?Language=English&amp;JobID=201105\" onclick=\"_gaq.push(['_trackEvent', 'ptBannerClick', 'JOBSEARCH', 'on']); adobeDataLayer.push({'event':'customTracking','link': {'customCall':'ESDC:EDSC:JobBank Banner Click'}}); return true;\" rel=\"external\" class=\"provBanner\"><img class=\"img-responsive thumbnail mrgn-bttm-sm\" alt=\"A classroom filled with students sitting at desks writing in notebooks\" src=\"/fstream?provinceCode=on&amp;lang=en&amp;key=ptbanner.seeker.1&amp;previewInd=false\"><span>Opens in a new window</span></a></section><section class=\"col-md-6 mrgn-bttm-md\"><a href=\"https://www.internship.gov.on.ca/mbs/sdb/intern.nsf/LkpWebContent/ePublishedHome\" onclick=\"_gaq.push(['_trackEvent', 'ptBannerClick', 'JOBSEARCH', 'on']); adobeDataLayer.push({'event':'customTracking','link': {'customCall':'ESDC:EDSC:JobBank Banner Click'}}); return true;\" rel=\"external\" class=\"provBanner\"><img class=\"img-responsive thumbnail mrgn-bttm-sm\" alt=\"An Indigenous professional talking on the phone in an office\" src=\"/fstream?provinceCode=on&amp;lang=en&amp;key=ptbanner.seeker.2&amp;previewInd=false\"><span>Opens in a new window</span></a></section></div></aside><footer id=\"wb-info\" class=\"\"><div class=\"gc-contextual\"><div class=\"container\"><nav><h2 class=\"wb-inv\">Related links</h2><ul class=\"list-col-xs-1 list-col-sm-2 list-col-md-3\"><li><a href=\"/helpsupport\">Job Bank Support</a></li><li><a href=\"/aboutus\">About us</a></li><li><a href=\"https://www.jobbank.gc.ca/intro\">Introduction to Job Bank</a></li><li><a href=\"https://www.jobbank.gc.ca/network\">Our network</a></li><li><a href=\"/termsofuseseeker\">Terms of use - Job seekers</a></li><li><a href=\"/termsofuseemployer\">Terms of use - Employers</a></li></ul></nav></div></div><div class=\"gc-sub-footer\"><div class=\"container d-flex align-items-center\"><nav aria-labelledby=\"aboutWebApp\"><h3 class=\"wb-inv\" id=\"aboutWebApp\">Government of Canada Corporate</h3><ul><li><a href=\"https://www.canada.ca/en/transparency/terms.html\" target=\"_blank\" rel=\"noopener\">Terms and conditions<span class=\"wb-inv\"> This link will open in a new window</span></a></li><li><a href=\"https://www.canada.ca/en/transparency/privacy.html\" target=\"_blank\" rel=\"noopener\">Privacy<span class=\"wb-inv\"> This link will open in a new window</span></a></li></ul></nav><div class=\"col-xs-6 visible-sm visible-xs tofpg\"><a href=\"#wb-cont\">Top of Page <span class=\"glyphicon glyphicon-chevron-up\"></span></a></div><div class=\"wtrmrk align-self-end\"><img src=\"/themes-sat/assets/wmms-blk.svg\" alt=\"Symbol of the Government of Canada\"><meta property=\"areaServed\" typeof=\"Country\" content=\"Canada\"><link property=\"logo\" href=\"/themes-sat/assets/wmms-blk.svg\"></div></div></div></footer></body></html>",
+    "how_to_html": "<!--?xml version=\"1.0\" encoding=\"UTF-8\"?--><html><body><partial-response id=\"j_id__v_0\"><changes><update id=\"applynow\"><div id=\"howtoapply\" class=\"howtoapply\"><h3>How to apply</h3><h4 id=\"htaemail\">By email<span id=\"tp_unverifiedEmailAddress\" class=\"timepickler\"></span></h4><p><a href=\"mailto:applyomegasoftware@gmail.com\">applyomegasoftware@gmail.com</a><span id=\"tp_applyByEmailAddress\" class=\"timepickler\"></span></p></div><h3>Advertised until</h3><p property=\"validThrough\">2025-01-16<span id=\"tp_expiryDate\" class=\"timepickler\"></span></p>]]&gt;</update><update id=\"j_id__v_0:jakarta.faces.ViewState:1\"></update></changes></partial-response></body></html>",
+    "fetch_timestamp": "2024-12-25T19:40:43.798Z",
+    "original_size": {
+      "main": 175434,
+      "how_to": 838
+    },
+    "cleaned_size": {
+      "main": 32611,
+      "how_to": 661
+    }
+  },
+]
+
+# ---------------------------------------------------------------------------- #
+#                 Job Clean Up Script (jobs_cleanup-script.js)                 #
+# ---------------------------------------------------------------------------- #
+
+const main = async () => {
+  try {
+    console.log("Starting job information extraction...");
+    
+    // Get the raw jobs data
+    const jobsData = getJobsRawHtml();
+    if (!jobsData || !Array.isArray(jobsData)) {
+      throw new Error("No valid jobs data found");
+    }
+
+    console.log(`Found ${jobsData.length} jobs to process`);
+
+    // Function to get job info from OpenAI
+    const getJobInfo = async (mainHtml, howToHtml, jobLink) => {
+      const prompt = `
+        Please analyze these HTML contents from a job posting and extract information into a structured JSON format.
+
+        Main job posting HTML:
+        ${mainHtml}
+
+        How to apply HTML:
+        ${howToHtml}
+
+        Please extract and format the following information into a JSON object:
+        1. contact_email: Email address for applications (from how to apply section)
+        2. application_instructions: Complete instructions on how to apply
+        3. job_posting_text: A well-formatted markdown version of all job information
+        4. job_posting_link: ${jobLink}
+        5. additional_info: Any other relevant information including:
+           - Salary
+           - Location
+           - Job Role
+           - Company name
+           - Job type
+           - Required experience
+           - Required education
+           - Language requirements
+           - Work arrangement (remote/onsite)
+
+        Format the response as valid JSON object with these exact keys.
+        Include only the JSON object, no other text.
+        Ensure the job_posting_text is well-formatted markdown with proper headers, lists, and sections.
+        return the output as json, do not add any other text to it. 
+      `;
+
+      await sleep(1000); // Simple delay between API calls
+      const response = await callAI(prompt,{provider: "openai"});
+      return response.choices[0].message.content.trim();
+    };
+
+    // Process all jobs
+    const processedJobs = [];
+    let processedCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < jobsData.length; i++) {
+      const jobData = jobsData[i];
+      console.log(`\nProcessing job ${i + 1}/${jobsData.length}: ${jobData.job_id}`);
+
+      try {
+        // Skip jobs that had fetch errors
+        if (jobData.error) {
+          console.log(`Skipping job ${jobData.job_id} - fetch error: ${jobData.error}`);
+          processedJobs.push({
+            job_id: jobData.job_id,
+            error: jobData.error,
+            status: jobData.status,
+            processed_timestamp: new Date().toISOString(),
+          });
+          continue;
+        }
+
+        console.log(jobData);
+
+        // Get job info from OpenAI
+        const jobInfo = await getJobInfo(
+          jobData.main_html,
+          jobData.how_to_html,
+          jobData.job_url
+        );
+
+        // Add metadata
+        processedJobs.push({
+          job_id: jobData.job_id,
+          processed_timestamp: new Date().toISOString(),
+          original_fetch_timestamp: jobData.fetch_timestamp,
+          job_json: JSON.parse(jobInfo),
+          raw_gpt_responce: jobInfo,
+        });
+
+        processedCount++;
+        console.log(`Successfully processed job ${jobData.job_id}`);
+
+      } catch (error) {
+        errorCount++;
+        console.error(`Error processing job ${jobData.job_id}:`, error.message);
+        
+        processedJobs.push({
+          job_id: jobData.job_id,
+          error: error.message,
+          processed_timestamp: new Date().toISOString()
+        });
+      }
+    }
+
+    // Save processed jobs
+    await saveJobsCleanJson(processedJobs);
+    
+    console.log("\nProcessing complete:");
+    console.log(`Successfully processed: ${processedCount} jobs`);
+    if (errorCount > 0) {
+      console.log(`Errors encountered: ${errorCount} jobs`);
+    }
+
+    return { 
+      processed: processedCount,
+      errors: errorCount,
+      total: jobsData.length
+    };
+
+  } catch (error) {
+    console.error(`Error in jobs cleanup process: ${error.message}`);
+    throw error;
+  }
+};
+
+// Execute the main function
+main().catch(error => {
+  console.error("Script failed:", error.message);
+});
+
+# ---------------------------------------------------------------------------- #
+#                    Jobs Clean Json (jobs_clean_json.json)                    #
+# ---------------------------------------------------------------------------- #
+
+{
+    "job_id": "42313964",
+    "processed_timestamp": "2024-12-25T19:45:39.829Z",
+    "original_fetch_timestamp": "2024-12-25T19:40:46.187Z",
+    "job_json": {
+      "contact_email": "careers@wiasystems.com",
+      "application_instructions": "To apply, please send your resume and cover letter to careers@wiasystems.com.",
+      "job_posting_text": "# Job Posting\n\n## Job Title: Software Engineer\n\n**Job Description:**\n\n- Education: Bachelor's degree in Computer Science or related field\n- Experience: 2 years to less than 3 years\n- Location: Vancouver, BC\n- Work Arrangement: Hybrid (in-person and remote)\n\n## Job Responsibilities:\n\n- Collect and document user's requirements\n- Coordinate the development, installation, integration and operation of computer-based systems\n- Define system functionality\n- Develop flowcharts, layouts, and documentation to identify solutions\n- Develop process and network models to optimize architecture\n- Develop software solutions by studying systems flow, data usage, and work processes\n- Evaluate the performance and reliability of system designs\n- Evaluate user feedback\n- Execute full lifecycle software development\n- Prepare plan to maintain software\n- Research technical information to design, develop, and test computer-based systems\n- Synthesize technical information for every phase of the cycle of a computer-based system\n- Upgrade and maintain software\n- Lead and coordinate teams of information systems professionals in the development of software and integrated information systems, process control software, and other embedded software control systems\n\n## Required Skills and Qualifications:\n\n- Agile\n- Cloud\n- Development and operations (DevOps)\n- Eclipse\n- Jira\n- Microsoft Visual Studio\n- HTML\n- Intranet\n- Internet\n- XML Technology (XSL, XSD, DTD)\n- Servers\n- Desktop applications\n- Enterprise Applications Integration (EAI)\n- Java\n- File management software\n- Word processing software\n- X Windows\n- Servlet\n- Object-Oriented programming languages\n- Presentation software\n- Mail server software\n- Project management software\n- Programming software\n- SQL\n- Database software\n- Programming languages\n- Software development\n- XML\n- MS Office\n- Spreadsheet\n- Oracle\n- TCP/IP\n- Amazon Web Services (AWS)\n- Git\n- Atlassian Confluence\n- GitHub\n- Performance testing\n- Postman\n- Software quality assurance\n- MS Excel\n- MS Outlook\n- MS SQL Server\n\n### Benefits:\n\n- Health benefits: Dental plan, Health care plan, Vision care benefits\n- Other benefits: Learning/training paid by employer, Other benefits, Paid time off (volunteering or personal days)\n\nFor more information about the position and to apply, please send your resume and cover letter to careers@wiasystems.com.",
+      "job_posting_link": "https://www.jobbank.gc.ca/jobsearch/jobposting/42313964?source=searchresults",
+      "additional_info": {
+        "salary": "CAD 60.50 per hour",
+        "location": "Vancouver, BC",
+        "job_role": "Software Engineer",
+        "company_name": "WIA Software Systems Inc.",
+        "job_type": "Permanent, Full-time",
+        "required_experience": "2 years to less than 3 years",
+        "required_education": "Bachelor's degree in Computer Science or related field",
+        "language_requirements": "English",
+        "work_arrangement": "Hybrid (in-person and remote)"
+      }
+    },
+    "raw_gpt_responce": "{\n  \"contact_email\": \"careers@wiasystems.com\",\n  \"application_instructions\": \"To apply, please send your resume and cover letter to careers@wiasystems.com.\",\n  \"job_posting_text\": \"# Job Posting\\n\\n## Job Title: Software Engineer\\n\\n**Job Description:**\\n\\n- Education: Bachelor's degree in Computer Science or related field\\n- Experience: 2 years to less than 3 years\\n- Location: Vancouver, BC\\n- Work Arrangement: Hybrid (in-person and remote)\\n\\n## Job Responsibilities:\\n\\n- Collect and document user's requirements\\n- Coordinate the development, installation, integration and operation of computer-based systems\\n- Define system functionality\\n- Develop flowcharts, layouts, and documentation to identify solutions\\n- Develop process and network models to optimize architecture\\n- Develop software solutions by studying systems flow, data usage, and work processes\\n- Evaluate the performance and reliability of system designs\\n- Evaluate user feedback\\n- Execute full lifecycle software development\\n- Prepare plan to maintain software\\n- Research technical information to design, develop, and test computer-based systems\\n- Synthesize technical information for every phase of the cycle of a computer-based system\\n- Upgrade and maintain software\\n- Lead and coordinate teams of information systems professionals in the development of software and integrated information systems, process control software, and other embedded software control systems\\n\\n## Required Skills and Qualifications:\\n\\n- Agile\\n- Cloud\\n- Development and operations (DevOps)\\n- Eclipse\\n- Jira\\n- Microsoft Visual Studio\\n- HTML\\n- Intranet\\n- Internet\\n- XML Technology (XSL, XSD, DTD)\\n- Servers\\n- Desktop applications\\n- Enterprise Applications Integration (EAI)\\n- Java\\n- File management software\\n- Word processing software\\n- X Windows\\n- Servlet\\n- Object-Oriented programming languages\\n- Presentation software\\n- Mail server software\\n- Project management software\\n- Programming software\\n- SQL\\n- Database software\\n- Programming languages\\n- Software development\\n- XML\\n- MS Office\\n- Spreadsheet\\n- Oracle\\n- TCP/IP\\n- Amazon Web Services (AWS)\\n- Git\\n- Atlassian Confluence\\n- GitHub\\n- Performance testing\\n- Postman\\n- Software quality assurance\\n- MS Excel\\n- MS Outlook\\n- MS SQL Server\\n\\n### Benefits:\\n\\n- Health benefits: Dental plan, Health care plan, Vision care benefits\\n- Other benefits: Learning/training paid by employer, Other benefits, Paid time off (volunteering or personal days)\\n\\nFor more information about the position and to apply, please send your resume and cover letter to careers@wiasystems.com.\",\n  \"job_posting_link\": \"https://www.jobbank.gc.ca/jobsearch/jobposting/42313964?source=searchresults\",\n  \"additional_info\": {\n    \"salary\": \"CAD 60.50 per hour\",\n    \"location\": \"Vancouver, BC\",\n    \"job_role\": \"Software Engineer\",\n    \"company_name\": \"WIA Software Systems Inc.\",\n    \"job_type\": \"Permanent, Full-time\",\n    \"required_experience\": \"2 years to less than 3 years\",\n    \"required_education\": \"Bachelor's degree in Computer Science or related field\",\n    \"language_requirements\": \"English\",\n    \"work_arrangement\": \"Hybrid (in-person and remote)\"\n  }\n}"
+  },
+
+  # ---------------------------------------------------------------------------- #
+  #                 Email Generation Script (email_gen_script.js)                #
+  # ---------------------------------------------------------------------------- #
+
+  // Default email generation script template
+const main = async () => {
+  try {
+    console.log("Starting email generation process...");
+    
+    // Get the cleaned job data
+    const jobsData = getJobsCleanJson();
+    if (!jobsData || !Array.isArray(jobsData)) {
+      throw new Error("No valid jobs data found");
+    }
+
+    // Load resume from GitHub raw file
+    async function getResumeFromGithub(rawFileUrl) {
+      try {
+        const response = await axios.get(rawFileUrl);
+        if (!response.data) {
+          throw new Error("Empty resume data received");
+        }
+        return response.data; // markdown content
+      } catch (error) {
+        console.error("Error fetching resume:", error);
+        throw new Error("Failed to fetch resume from GitHub");
+      }
+    }
+
+    // Get resume data
+    const RESUME_URL = "https://raw.githubusercontent.com/daviddodda1/resume_md/refs/heads/main/README.md"; 
+    console.log("Fetching resume from GitHub...");
+    const resumeData = await getResumeFromGithub(RESUME_URL);
+    console.log("Resume loaded successfully");
+
+    console.log(`Found ${jobsData.length} jobs to process`);
+
+    // Function to generate email for a job
+    const generateEmail = async (jobData, resumeMarkdown) => {
+      const prompt = `
+Please help me write a professional job application email based on the following information:
+
+=== MY RESUME ===
+${resumeMarkdown}
+
+=== JOB DETAILS ===
+Job Title: ${jobData.job_json.additional_info.job_role}
+Company: ${jobData.job_json.additional_info.company_name}
+Location: ${jobData.job_json.additional_info.location}
+Salary: ${jobData.job_json.additional_info.salary}
+Work Arrangement: ${jobData.job_json.additional_info.work_arrangement}
+Required Experience: ${jobData.job_json.additional_info.required_experience}
+Required Education: ${jobData.job_json.additional_info.required_education}
+Language Requirements: ${jobData.job_json.additional_info.language_requirements}
+Job Type: ${jobData.job_json.additional_info.job_type}
+Job Description: ${jobData.job_json.job_posting_text}
+Application Instructions: ${jobData.job_json.application_instructions}
+Contact Email: ${jobData.job_json.contact_email}
+
+Instructions:
+1. Create an email that is ready to send without any placeholders or edits needed
+2. If any critical information is missing (like company name or job title), respond with an error message instead of generating incomplete content
+3. Skip any optional fields if they're empty rather than including placeholder text
+4. Use natural sentence structure instead of obvious template language
+5. Include specific details from both the resume and job description to show genuine interest and fit
+6. Any links or contact information should be properly formatted and ready to use
+
+Format the response as a JSON object with these keys:
+{
+  "status": "success" or "error",
+  "error_message": "Only present if status is error, explaining what critical information is missing",
+  "email": {
+    "subject": "The email subject line",
+    "body_html": "The email body in HTML format with proper formatting",
+    "body_text": "The plain text version of the email",
+    "metadata": {
+      "key_points_addressed": ["list of main points addressed"],
+      "skills_highlighted": ["list of skills mentioned"],
+      "resume_matches": ["specific experiences/skills from resume that match job requirements"],
+      "missing_recommended_info": ["optional fields that were missing but would strengthen the application if available"],
+      "tone_analysis": "brief analysis of the email's tone"
+    }
+  }
+}
+
+Critical required fields (will return error if missing):
+- Job title
+- Company name
+- Job description
+- Resume content
+
+Please ensure all HTML in body_html is properly escaped for JSON and uses only basic formatting tags (p, br, b, i, ul, li) to ensure maximum email client compatibility.
+`;
+
+      const response = await callAI(prompt);
+      await sleep(3000); // 3-second delay
+      const content = response.choices[0].message.content.trim();
+     try {
+        // If the data includes the ```json\n prefix and \n``` suffix, remove them
+        const cleanData = rawData.replace(/^```json\n/, '').replace(/\n```$/, '');
+    
+        // Parse the JSON
+        const parsedContent = JSON.parse(cleanData);
+        return [parsedContent, prompt];
+      } catch (error) {
+        console.log("Response is not in JSON format, returning as string");
+        return [ content, prompt];
+      }
+    //   return [JSON.parse(response.choices[0].message.content.trim()), prompt];
+    };
+
+    // Process all jobs
+    const generatedEmails = [];
+    let processedCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < jobsData.length; i++) {
+      const jobData = jobsData[i];
+      console.log(`\nProcessing job ${i + 1}/${jobsData.length}: ${jobData.job_id}`);
+
+      try {
+        // Skip jobs with errors
+        if (jobData.error) {
+          console.log(`Skipping job ${jobData.job_id} - has error: ${jobData.error}`);
+          generatedEmails.push({
+            job_id: jobData.job_id,
+            error: jobData.error,
+            processed_timestamp: new Date().toISOString()
+          });
+          continue;
+        }
+
+        // Generate email with resume context
+        const [emailData, promptData] = await generateEmail(jobData, resumeData);
+
+        // Add metadata
+        generatedEmails.push({
+          job_id: jobData.job_id,
+          email_data: emailData,
+          to_email: jobData.contact_email,
+          job_link: jobData.job_posting_link,
+          company_name: jobData.additional_info?.company_name,
+          resume_format: "markdown",
+          processed_timestamp: new Date().toISOString(),
+          prompt: promptData
+        });
+
+        processedCount++;
+        console.log(`Successfully generated email for job ${jobData.job_id}`);
+
+      } catch (error) {
+        errorCount++;
+        console.error(`Error generating email for job ${jobData.job_id}:`, error.message);
+        
+        generatedEmails.push({
+          job_id: jobData.job_id,
+          error: error.message,
+          processed_timestamp: new Date().toISOString()
+        });
+      }
+    }
+
+    // Save generated emails
+    await saveGeneratedEmails(generatedEmails);
+    
+    console.log("\nEmail generation complete:");
+    console.log(`Successfully processed: ${processedCount} jobs`);
+    if (errorCount > 0) {
+      console.log(`Errors encountered: ${errorCount} jobs`);
+    }
+
+    return { 
+      processed: processedCount,
+      errors: errorCount,
+      total: jobsData.length
+    };
+
+  } catch (error) {
+    console.error(error);
+    console.error(`Error in email generation process: ${error.message}`);
+    throw error;
+  }
+};
+
+// Execute the main function
+main().catch(error => {
+  console.error("Script failed:", error.message);
+});
+
+# ---------------------------------------------------------------------------- #
+#               Generated Email Json (generated_emails_json.json)              #
+# ---------------------------------------------------------------------------- #
+
+[
+    {
+    "job_id": "42313964",
+    "email_data": "```json\n{\n  \"status\": \"success\",\n  \"email\": {\n    \"subject\": \"Application for Software Engineer Position\",\n    \"body_html\": \"<p>Dear Hiring Manager,</p><p>I hope this message finds you well. My name is Arun David Reddy Dodda, and I am writing to express my interest in the Software Engineer position at WIA Software Systems Inc. I am a Senior Software Developer with extensive experience in full-stack development, and I believe my skills align well with the requirements outlined in your job posting.</p><p>With a Bachelor’s degree in Electronics and Communication and over 5 years of professional experience, I have honed my capabilities in various programming languages and technologies, particularly in React, Node.js, AWS, and SQL. At Black Beard Development Group, I led the development of a privacy-focused AI platform and played a pivotal role in establishing CI/CD pipelines that improved efficiencies across our team.</p><p>Your job description emphasizes the importance of developing software solutions by studying systems flow, data usage, and work processes. In my previous roles, I have consistently evaluated user feedback to improve system designs and have successfully executed the full lifecycle of software development. Additionally, my involvement in agile methodologies and my proficiency in AWS aligns perfectly with your requirement for cloud and DevOps experience.</p><p>Furthermore, I have experience collaborating with teams to coordinate the development and integration of computer-based systems, ensuring optimal functionality and performance. My recent project involving a fantasy sports DApp required me to coordinate with various stakeholders, manage expectations, and lead technical efforts, making me well-equipped for the responsibilities at WIA Software Systems Inc.</p><p>I am particularly excited about the hybrid work arrangement offered for this role, as I believe it allows for both collaborative in-person engagement and the flexibility of remote work, which enhances productivity.</p><p>Thank you for considering my application. I have attached my resume for your review and would welcome the opportunity to discuss how my background, skills, and enthusiasms align with the goals of WIA Software Systems Inc.</p><p>Best regards,<br>Arun David Reddy Dodda<br>+91 7989917871<br>dd@daviddodda.com<br><a href='https://daviddodda.com'>Portfolio</a></p>\",\n    \"body_text\": \"Dear Hiring Manager,\\n\\nI hope this message finds you well. My name is Arun David Reddy Dodda, and I am writing to express my interest in the Software Engineer position at WIA Software Systems Inc. I am a Senior Software Developer with extensive experience in full-stack development, and I believe my skills align well with the requirements outlined in your job posting.\\n\\nWith a Bachelor’s degree in Electronics and Communication and over 5 years of professional experience, I have honed my capabilities in various programming languages and technologies, particularly in React, Node.js, AWS, and SQL. At Black Beard Development Group, I led the development of a privacy-focused AI platform and played a pivotal role in establishing CI/CD pipelines that improved efficiencies across our team.\\n\\nYour job description emphasizes the importance of developing software solutions by studying systems flow, data usage, and work processes. In my previous roles, I have consistently evaluated user feedback to improve system designs and have successfully executed the full lifecycle of software development. Additionally, my involvement in agile methodologies and my proficiency in AWS aligns perfectly with your requirement for cloud and DevOps experience.\\n\\nFurthermore, I have experience collaborating with teams to coordinate the development and integration of computer-based systems, ensuring optimal functionality and performance. My recent project involving a fantasy sports DApp required me to coordinate with various stakeholders, manage expectations, and lead technical efforts, making me well-equipped for the responsibilities at WIA Software Systems Inc.\\n\\nI am particularly excited about the hybrid work arrangement offered for this role, as I believe it allows for both collaborative in-person engagement and the flexibility of remote work, which enhances productivity.\\n\\nThank you for considering my application. I have attached my resume for your review and would welcome the opportunity to discuss how my background, skills, and enthusiasms align with the goals of WIA Software Systems Inc.\\n\\nBest regards,\\nArun David Reddy Dodda\\n+91 7989917871\\ndd@daviddodda.com\\nhttps://daviddodda.com\",\n    \"metadata\": {\n      \"key_points_addressed\": [\n        \"Expressed interest in the Software Engineer position\",\n        \"Highlighted relevant experience and skills\",\n        \"Mentioned specific projects that align with job responsibilities\",\n        \"Emphasized enthusiasm for hybrid work arrangement\"\n      ],\n      \"skills_highlighted\": [\n        \"Full-stack development\",\n        \"React\",\n        \"Node.js\",\n        \"AWS\",\n        \"SQL\",\n        \"Agile methodologies\",\n        \"CI/CD pipelines\"\n      ],\n      \"resume_matches\": [\n        \"Bachelor’s degree in Electronics and Communication\",\n        \"Over 5 years of experience in software development\",\n        \"Experience in developing software solutions and executing full lifecycle\",\n        \"Worked in agile environments and used cloud technologies like AWS\"\n      ],\n      \"missing_recommended_info\": [],\n      \"tone_analysis\": \"The tone is professional, enthusiastic, and focused on the alignment between skills and job requirements, effectively positioning the candidate as a strong fit for the role.\"\n    }\n  }\n}\n```",
+    "resume_format": "markdown",
+    "processed_timestamp": "2024-12-28T09:46:16.366Z",
+    "prompt": "\nPlease help me write a professional job application email based on the following information:\n\n=== MY RESUME ===\n# Arun David Reddy Dodda\n## Senior Software Developer\n\n**Contact:**  \n📍 India  \n📱 +91 7989917871  \n📧 dd@daviddodda.com  \n🔗 https://daviddodda.com\n\n## Profiles\n- daviddodda1\n- arundavidreddy\n- DavidDodda_\n\n## Skills\n\n### Full-Stack Development\nReact, Node.js, TypeScript, NestJS, MongoDB, Redis\n\n### Web3 & Blockchain\nSolidity, Rust, Web3.js, Smart Contracts, NFT\n\n### AI/ML\nLangChain, OpenAI Integration, LLM Fine-tuning, ComfyUI\n\n### DevOps\nAWS (EKS, ECS, S3), Docker, CI/CD, Nginx\n\n### Hardware\nCircuit Design, PCB Development, IoT Systems, 3D Printing\n\n## Certifications\nIELTS - Overall: 8\n\n## Education\n**JNTUH**  \nB.Tech in Electronics and Communication  \n2016-2020\n\n## Languages\nEnglish, Telugu, Hindi\n\n## Summary\nSenior Software Developer with extensive experience in full-stack development, blockchain, and AI systems. Passionate about building innovative solutions ranging from privacy-focused AI platforms to IoT hardware prototypes. Outside of leading development teams and architecting scalable applications, I enjoy 3D printing, building custom keyboards, and experimenting with home lab setups. Known for combining technical expertise with creative problem-solving to deliver impactful solutions.\n\n## Experience\n\n### Black Beard Development Group\n**Sr Software Developer**  \n*March 2023 - Present (Remote)*  \n🔗 https://blackbeard.io/\n\n- Led development of privacy-focused AI platform utilizing AWS microservices architecture\n- Architected fantasy sports DApp integrating Web3 payments and NFT rewards\n- Established CI/CD pipelines reducing deployment time by 60%\n- Mentored junior developers while managing stakeholder expectations\n\n**Key Projects:**\n\n#### Sentry AI | Lead Developer\n- Built privacy-focused AI platform using distributed computing architecture\n- Engineered scalable backend processing thousands of AI inference requests daily\n- Implemented end-to-end encryption for user data protection\n- Tech: AWS (EKS, ECS, S3), Next.js, NestJS, MongoDB, ComfyUI\n\n#### Fantasy Football DApp | Technical Lead\n- Developed Web3 platform integrating Yahoo Fantasy Football with blockchain\n- Built automated smart contract system for league payments and wagering\n- Created NFT trophy system with IPFS storage\n- Tech: Node.js, React, Solidity, Web3.js, MongoDB\n\n#### Proxy Tokens | Core Developer\n- Engineered anti-phishing NFT verification platform with Shopify integration\n- Built trustless verification system protecting high-value NFT transactions\n- Implemented secure token transfer protocols\n- Tech: Node.js, Solidity, React, Shopify API\n\n### Rapid Innovation\n**Sr Software Developer**  \n*Apr 2022 - Mar 2023 (Remote)*  \n🔗 https://www.rapidinnovation.io/\n\n- Spearheaded development of low-latency, high-availability applications\n- Led sprint planning and execution for team of 5 developers\n- Implemented comprehensive QA processes improving code quality by 40%\n- Built and maintained technical documentation framework\n\n**Key Projects:**\n\n#### Solvenir NFT Marketplace | Lead Developer\n- Built full-stack NFT marketplace on Solana blockchain\n- Implemented DeFi features including staking and automated market making\n- Created NFT launchpad platform for new projects\n- Tech: Rust, React, Solana, MongoDB\n\n#### Battle Ground Legends | Technical Lead\n- Developed Web3 multiplayer game with NFT integration\n- Built real-time multiplayer system using Photon Engine\n- Implemented NFT staking mechanics and token economy\n- Tech: Unity, NestJS, MongoDB, Rust, Solana\n\n#### Pool Shark Billiard Club | Backend Lead\n- Created real-time match-making and tournament management system\n- Implemented skill-based player ranking algorithm\n- Built payment processing and reward distribution system\n- Tech: Node.js, MongoDB, WebSocket, Redis\n\n### V-REAP\n**Full Stack Developer & Curriculum Designer**  \n*Apr 2018 - Oct 2021*  \n🔗 https://www.vreap.org/\n\n- Designed and delivered Electronics & Robotics curriculum reaching 850+ students\n- Created hands-on projects and video content for rural students\n- Trained 50+ social entrepreneurs to effectively deliver technical education\n- Built and maintained evaluation platforms supporting the curriculum\n\n**Key Projects:**\n\n#### Business Ideation Festival | Technical Lead\n- Built scalable assessment platform handling 20,000+ students\n- Developed automated scoring system for business proposals\n- Created real-time analytics dashboard for program tracking\n- Tech: Node.js, MongoDB, Real-time Analytics, Digital Ocean\n\n#### Entrepreneur Assessment Tool | Lead Developer\n- Developed psychometric evaluation platform for social entrepreneurs\n- Built custom reporting system with actionable insights\n- Created mobile-first interface for rural accessibility\n- Tech: Node.js, MongoDB, Progressive Web App\n\n#### Electronics Curriculum Platform | Full-Stack Developer\n- Built video-based learning platform reaching 850+ students\n- Created offline-first architecture for areas with limited connectivity\n- Developed progress tracking and assessment system\n- Tech: Node.js, MongoDB, Video Streaming\n\n## Projects\n\n### Smart Switch Board | IoT Hardware Project\n- IoT power monitoring system with production-ready design\n- Engineered custom PCB with hot-swappable relays for easy maintenance\n- Built real-time power monitoring system with per-device consumption tracking\n- Created mobile dashboard for remote control and power usage analytics\n- Tech: NodeMCU, Custom PCB Design, Node.js, MongoDB, IoT Sensors\n\n### Video Generator | Ad Campaign Automation\n- Built Python script generating thousands of personalized video ads\n- Implemented dynamic text-to-video overlay system for viewer customization\n- Created automated rendering pipeline reducing manual editing time by 90%\n- Tech: Python, FFmpeg, OpenCV, AWS Lambda\n\n## More Projects\n\n### Student Assignment Submission Portal\nA Web Tool for teachers to collect assignments from students  \n**Tech Used:** Node.js, MongoDB, Handlebars.js, CSS + Bootstrap, Deployed on digital ocean droplet\n\n### Cloudflare DDNS\nA simple Rust script to automate the update of the DNS on cloudflare  \n**Tech Used:** Rust, Cloud Flare APIs\n\n### Ticket Aura\nA web3, NFT based ticketing system for events and membership management  \n**Tech Used:** VueJs, NestJs, MongoDB, Rust, Solana\n\n### YouTube Content Generator\nCollaborated on building a Python script that scraped data from Reddit and uses Text to speech libraries and Moviepy library to generate video content for YouTube  \n**Tech Used:** Python\n\n### Tool to take Surveys with Geotagging\nBuilt a webtool for an Urban Planning Project to conduct surveys with Geotagging for analyzing data based on location  \n**Tech Used:** Node.js, MongoDB, React, mapbox, Deployed on digital ocean droplet\n\n### Data Analytics tool for capital investment\nTool that allows you to quickly identify trends across your customer cohorts to analyze your growth  \n**Tech Used:** Node.js, MongoDB, Handlebars.js, CSS + Bootstrap, Deployed on digital ocean droplet\n\n### Zawn\nWorked with a team to build a comprehensive platform for organizations to build an environmentally conscious workforce  \n**Tech Used:** Node.js, MongoDB, React, CSS/JS, GitHub Actions CI/CD\n\n### Network Disconnect alert mechanism for headless Linux server\nA Python script to trigger an alarm using the inbuilt buzzer in a Headless Linux Server to alert when the system is disconnected from the network  \n**Tech Used:** Python, shell script\n\n\n=== JOB DETAILS ===\nJob Title: Software Engineer\nCompany: WIA Software Systems Inc.\nLocation: Vancouver, BC\nSalary: CAD 60.50 per hour\nWork Arrangement: Hybrid (in-person and remote)\nRequired Experience: 2 years to less than 3 years\nRequired Education: Bachelor's degree in Computer Science or related field\nLanguage Requirements: English\nJob Type: Permanent, Full-time\nJob Description: # Job Posting\n\n## Job Title: Software Engineer\n\n**Job Description:**\n\n- Education: Bachelor's degree in Computer Science or related field\n- Experience: 2 years to less than 3 years\n- Location: Vancouver, BC\n- Work Arrangement: Hybrid (in-person and remote)\n\n## Job Responsibilities:\n\n- Collect and document user's requirements\n- Coordinate the development, installation, integration and operation of computer-based systems\n- Define system functionality\n- Develop flowcharts, layouts, and documentation to identify solutions\n- Develop process and network models to optimize architecture\n- Develop software solutions by studying systems flow, data usage, and work processes\n- Evaluate the performance and reliability of system designs\n- Evaluate user feedback\n- Execute full lifecycle software development\n- Prepare plan to maintain software\n- Research technical information to design, develop, and test computer-based systems\n- Synthesize technical information for every phase of the cycle of a computer-based system\n- Upgrade and maintain software\n- Lead and coordinate teams of information systems professionals in the development of software and integrated information systems, process control software, and other embedded software control systems\n\n## Required Skills and Qualifications:\n\n- Agile\n- Cloud\n- Development and operations (DevOps)\n- Eclipse\n- Jira\n- Microsoft Visual Studio\n- HTML\n- Intranet\n- Internet\n- XML Technology (XSL, XSD, DTD)\n- Servers\n- Desktop applications\n- Enterprise Applications Integration (EAI)\n- Java\n- File management software\n- Word processing software\n- X Windows\n- Servlet\n- Object-Oriented programming languages\n- Presentation software\n- Mail server software\n- Project management software\n- Programming software\n- SQL\n- Database software\n- Programming languages\n- Software development\n- XML\n- MS Office\n- Spreadsheet\n- Oracle\n- TCP/IP\n- Amazon Web Services (AWS)\n- Git\n- Atlassian Confluence\n- GitHub\n- Performance testing\n- Postman\n- Software quality assurance\n- MS Excel\n- MS Outlook\n- MS SQL Server\n\n### Benefits:\n\n- Health benefits: Dental plan, Health care plan, Vision care benefits\n- Other benefits: Learning/training paid by employer, Other benefits, Paid time off (volunteering or personal days)\n\nFor more information about the position and to apply, please send your resume and cover letter to careers@wiasystems.com.\nApplication Instructions: To apply, please send your resume and cover letter to careers@wiasystems.com.\nContact Email: careers@wiasystems.com\n\nInstructions:\n1. Create an email that is ready to send without any placeholders or edits needed\n2. If any critical information is missing (like company name or job title), respond with an error message instead of generating incomplete content\n3. Skip any optional fields if they're empty rather than including placeholder text\n4. Use natural sentence structure instead of obvious template language\n5. Include specific details from both the resume and job description to show genuine interest and fit\n6. Any links or contact information should be properly formatted and ready to use\n\nFormat the response as a JSON object with these keys:\n{\n  \"status\": \"success\" or \"error\",\n  \"error_message\": \"Only present if status is error, explaining what critical information is missing\",\n  \"email\": {\n    \"subject\": \"The email subject line\",\n    \"body_html\": \"The email body in HTML format with proper formatting\",\n    \"body_text\": \"The plain text version of the email\",\n    \"metadata\": {\n      \"key_points_addressed\": [\"list of main points addressed\"],\n      \"skills_highlighted\": [\"list of skills mentioned\"],\n      \"resume_matches\": [\"specific experiences/skills from resume that match job requirements\"],\n      \"missing_recommended_info\": [\"optional fields that were missing but would strengthen the application if available\"],\n      \"tone_analysis\": \"brief analysis of the email's tone\"\n    }\n  }\n}\n\nCritical required fields (will return error if missing):\n- Job title\n- Company name\n- Job description\n- Resume content\n\nPlease ensure all HTML in body_html is properly escaped for JSON and uses only basic formatting tags (p, br, b, i, ul, li) to ensure maximum email client compatibility.\n"
+  }
+]
+
+# ---------------------------------------------------------------------------- #
+#                  Send Emails Script (send_emails_script.js)                  #
+# ---------------------------------------------------------------------------- #
+
+// Default send emails script template
+async function main() {
+  try {
+    // Get the generated emails JSON
+    const emailsData = await getGeneratedEmailsJson();
+    const testEmail = "kingping293@gmail.com";
+    console.log(`Found ${emailsData.length} job applications to process`);
+
+    // Track counts
+    let successCount = 0;
+    let failureCount = 0;
+    let errorCount = 0;
+
+    // Process each job application
+    for (const jobApplication of emailsData) {
+      const { job_id } = jobApplication;
+      console.log(`Processing job application ${job_id}`);
+
+      // Check if this is an error entry
+      if (jobApplication.error) {
+        console.log(`Skipping job ${job_id}: ${jobApplication.error}`);
+        errorCount++;
+        continue;
+      }
+
+      try {
+        const { email_data } = jobApplication;
+
+        // If the data includes the ```json\n prefix and \n``` suffix, remove them
+        const email_data_clean = email_data.replace(/^```json\n/, '').replace(/\n```$/, '');
+    
+        // Parse the JSON
+        const email_data_json = JSON.parse(email_data_clean);
+
+        console.log(email_data_json)
+
+        // Send the email
+        const result = await sendEmail({
+          to: testEmail, // Fallback to test email if not specified
+          subject: email_data_json.email.subject,
+          bodyHtml: email_data_json.email.body_html,
+          bodyText: email_data_json.email.body_text,
+          // Only include resumeUrl if it exists in the data
+          ...(jobApplication.resumeUrl && { resumeUrl: jobApplication.resumeUrl })
+        });
+
+        if (result.success) {
+          console.log(
+            `Successfully sent application for job ${job_id} (Message ID: ${result.messageId})`
+          );
+          successCount++;
+        }
+
+        // Add delay between sends to avoid rate limits
+        console.log("Waiting 5 seconds before sending next email...");
+        await sleep(5000);
+      } catch (error) {
+        console.error(
+          `Failed to send application for job ${job_id}: ${error.message}`
+        );
+        failureCount++;
+      }
+    }
+
+    // Log final results
+    console.log("\nEmail sending completed!");
+    console.log("--------------------");
+    console.log(`Successfully sent: ${successCount}`);
+    console.log(`Failed to send: ${failureCount}`);
+    console.log(`Skipped due to errors: ${errorCount}`);
+    console.log(`Total processed: ${emailsData.length}`);
+  } catch (error) {
+    console.error("Script failed:", error.message);
+    throw error;
+  }
+}
+
+// Run the main function
+main().catch(console.error);
