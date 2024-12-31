@@ -18,46 +18,54 @@ An automated job application system that helps streamline the process of finding
 - Redis
 - OpenAI API key (optional)
 - Claude API key (optional)
-- mailgun api key
+- Mailgun API key
 
 ## Setup
 
 1. Clone the repository:
-   > git clone https://github.com/yourusername/job-application-ai.git
-   > cd job-application-ai
+   ```bash
+   git clone https://github.com/yourusername/job-application-ai.git
+   cd job-application-ai
+   ```
 
 2. Install backend dependencies:
-   > npm install
+   ```bash
+   npm install
+   ```
 
 3. Install frontend dependencies:
-   > cd client
-   > npm install
-   > cd ..
+   ```bash
+   cd client
+   npm install
+   cd ..
+   ```
 
 4. Create a `.env` file in the root directory:
-   > MONGO_URI=mongodb://mongodb_host:27017/job_application
-   > REDIS_HOST=redis_host
-   > REDIS_PORT=6379
-   > OPENAI_API_KEY=your_openai_key
-   > CLAUDE_API_KEY=your_claude_key
-   > GMAIL_USER=your.email@gmail.com
-   > GMAIL_APP_PASSWORD=your_app_specific_password
+   ```
+   MONGO_URI=mongodb://mongodb_host:27017/job_application
+   REDIS_HOST=redis_host
+   REDIS_PORT=6379
+   OPENAI_API_KEY=your_openai_key
+   CLAUDE_API_KEY=your_claude_key
+   GMAIL_USER=your.email@gmail.com
+   GMAIL_APP_PASSWORD=your_app_specific_password
+   ```
 
 ## Running the Application
 
 1. Start the backend (from root directory):
-   > npm run dev
+   ```bash
+   npm run dev
+   ```
 
 2. Start the frontend (in a new terminal):
-   > cd client
-   > npm run dev
+   ```bash
+   cd client
+   npm run dev
+   ```
 
-3. Access the applications:
+3. Access the application:
    - Frontend: http://localhost:3001
-
-## Basic Usage
-
-
 
 ## Environment Variables
 
