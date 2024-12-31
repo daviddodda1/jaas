@@ -25,7 +25,7 @@ An automated job application system that helps streamline the process of finding
 1. Clone the repository:
    ```bash
    git clone https://github.com/daviddodda1/jaas
-   cd job-application-ai
+   cd jaas
    ```
 
 2. Install backend dependencies:
