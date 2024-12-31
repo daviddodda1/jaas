@@ -154,15 +154,14 @@ const getScriptFunctions = async (campaignId: string, scriptType: string) => {
       const response = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
-          model: "gpt-4o-mini",
+          model: "gpt-4o-mini", 
           messages: [{ role: "user", content: prompt }],
         },
         {
           headers: {
             Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
             "Content-Type": "application/json",
-          },
-          timeout: 30000, // Add timeout
+          }
         }
       );
       console.log("Response:", response.data.choices);
@@ -683,7 +682,7 @@ const getScriptFunctions = async (campaignId: string, scriptType: string) => {
             const formData: any = {
               from: `David Dodda <hi@${process.env.MAILGUN_DOMAIN}>`,
               to: emailData.to,
-              bcc: "dd@daviddodda.com",
+              bcc: process.env.BCC_EMAIL,
               subject: emailData.subject,
               text: emailData.bodyText,
               html: emailData.bodyHtml,
