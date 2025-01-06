@@ -22,18 +22,49 @@ An automated job application system that helps streamline the process of finding
 
 ## Setup
 
+### Using Docker
+
 1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/daviddodda1/jaas
+   cd jaas
+   ```
+
+2. Create a `.env` file in the root directory based on `.env.example`:
+
+   ```
+   MONGO_URI=mongodb://mongodb_host:27017/job_application
+   REDIS_HOST=redis_host
+   REDIS_PORT=6379
+   OPENAI_API_KEY=your_openai_key
+   CLAUDE_API_KEY=your_claude_key
+   GMAIL_USER=your.email@gmail.com
+   GMAIL_APP_PASSWORD=your_app_specific_password
+   ```
+
+3. Build and start the application using Docker Compose:
+   ```bash
+   docker-compose up --build
+   ```
+
+### Without Docker
+
+1. Clone the repository:
+
    ```bash
    git clone https://github.com/daviddodda1/jaas
    cd jaas
    ```
 
 2. Install backend dependencies:
+
    ```bash
    npm install
    ```
 
 3. Install frontend dependencies:
+
    ```bash
    cd client
    npm install
@@ -41,6 +72,7 @@ An automated job application system that helps streamline the process of finding
    ```
 
 4. Create a `.env` file in the root directory:
+
    ```
    MONGO_URI=mongodb://mongodb_host:27017/job_application
    REDIS_HOST=redis_host
@@ -53,12 +85,23 @@ An automated job application system that helps streamline the process of finding
 
 ## Running the Application
 
+### Using Docker
+
+1. Start the application using Docker Compose:
+   ```bash
+   docker-compose up
+   ```
+
+### Without Docker
+
 1. Start the backend (from root directory):
+
    ```bash
    npm run dev
    ```
 
 2. Start the frontend (in a new terminal):
+
    ```bash
    cd client
    npm run dev

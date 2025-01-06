@@ -217,20 +217,6 @@ const Page = () => {
     return () => clearInterval(interval);
   }, [params.id, activeTab]);
 
-  const handleRunCleanup = async () => {
-    try {
-      await fetch(`http://localhost:3000/campaigns/${params.id}/cleanup`, {
-        method: "POST",
-      });
-      // Refresh campaign data after cleanup
-      const res = await fetch(`http://localhost:3000/campaigns/${params.id}`);
-      const updatedData = await res.json();
-      setCampaignData(updatedData);
-    } catch (error) {
-      console.error("Error running cleanup:", error);
-    }
-  };
-
   const handleDeleteClick = async () => {
     if (!window.confirm("Are you sure you want to delete this campaign?"))
       return;
